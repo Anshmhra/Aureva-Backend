@@ -17,5 +17,3 @@ router.post("/login", (req, res) => {
     email: email,
   });
 });
-
-export default router;
