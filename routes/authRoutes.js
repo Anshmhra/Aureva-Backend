@@ -1,18 +1,13 @@
-import express from "express";
-
-const router = express.Router();
-
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // dummy check (test ke liye)
-  if (email === "test@test.com" && password === "123456") {
+  // koi bhi login allow
+  if (email && password) {
     return res.json({
-      token: "dummy-token-123"
+      token: "dummy-token-123",
+      email: email
     });
   }
 
-  res.status(400).json({ message: "Invalid credentials" });
+  res.status(400).json({ message: "Enter details" });
 });
-
-export default router;
