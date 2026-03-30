@@ -1,13 +1,21 @@
+import express from "express";
+
+const router = express.Router();
+
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // koi bhi login allow
-  if (email && password) {
-    return res.json({
-      token: "dummy-token-123",
-      email: email
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Email and password required",
     });
   }
 
-  res.status(400).json({ message: "Enter details" });
+  // ✅ Accept ANY user
+  return res.status(200).json({
+    token: "dummy-token-123",
+    email: email,
+  });
 });
+
+export default router;
