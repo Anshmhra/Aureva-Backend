@@ -3,13 +3,7 @@ import Razorpay from "razorpay";
 
 const router = express.Router();
 
-// ✅ Razorpay instance
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
-// ✅ LOGIN ROUTE (same as yours)
+// ✅ LOGIN ROUTE
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -25,13 +19,19 @@ router.post("/login", (req, res) => {
   });
 });
 
-// 💳 CREATE ORDER ROUTE (NEW)
+// 💳 CREATE ORDER ROUTE
 router.post("/create-order", async (req, res) => {
   try {
+    // ✅ Razorpay instance INSIDE route
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
     const { amount } = req.body;
 
     const options = {
-      amount: amount * 100, // ₹ → paise
+      amount: amount * 100,
       currency: "INR",
       receipt: "order_" + Date.now(),
     };
@@ -40,7 +40,7 @@ router.post("/create-order", async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    console.log(error);
+    console.log("ERROR:", error);
     res.status(500).json({ message: "Order creation failed" });
   }
 });
