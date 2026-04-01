@@ -3,6 +3,23 @@ import Razorpay from "razorpay";
 
 const router = express.Router();
 
+
+
+// ✅ SIGNUP ROUTE (ADD THIS)
+router.post("/signup", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Email and password required",
+    });
+  }
+
+  return res.status(200).json({
+    message: "Signup successful",
+  });
+});
+
 // ✅ LOGIN ROUTE
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
