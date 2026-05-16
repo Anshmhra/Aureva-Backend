@@ -150,33 +150,34 @@ router.post("/login", async (req, res) => {
 // =====================
 router.post("/create-order", async (req, res) => {
   try {
+
+    // ✅ RAZORPAY INSTANCE
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
+    // ✅ GET DATA
     const { amount, items = [] } = req.body;
 
     // ✅ DEBUG LOGS
     console.log("REQ BODY:", req.body);
-    console.log("AMOUNT:", amount);
+    console.log("FRONTEND AMOUNT:", amount);
     console.log("TYPE:", typeof amount);
 
     // 🔍 VALIDATION
-    if (!amount) {
+    if (!amount || isNaN(amount)) {
       return res.status(400).json({
-        message: "Amount is required",
+        message: "Valid amount is required",
       });
     }
 
-    console.log("📦 Amount received:", amount);
-    console.log("📦 Items:", items);
-
     // 💰 CONVERT ₹ → PAISE
-    const amountInPaise = parseInt(amount * 100);
+    const amountInPaise = Math.round(Number(amount) * 100);
 
     console.log("PAISE:", amountInPaise);
 
+    // ✅ RAZORPAY OPTIONS
     const options = {
       amount: amountInPaise,
       currency: "INR",
@@ -186,18 +187,23 @@ router.post("/create-order", async (req, res) => {
       },
     };
 
+    console.log("RAZORPAY OPTIONS:", options);
+
     // ✅ CREATE ORDER
     const order = await razorpay.orders.create(options);
 
-    console.log("✅ Order Created:", order.id);
+    console.log("✅ ORDER CREATED:", order);
 
+    // ✅ RESPONSE
     res.status(200).json(order);
 
   } catch (error) {
-    console.log("❌ Razorpay Error:", error);
+
+    console.log("❌ RAZORPAY ERROR:", error);
 
     res.status(500).json({
       message: "Order creation failed",
+      error: error.message,
     });
   }
 });
