@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cartRoutes from "./routes/cart.js";
 
 import authRoutes from "./routes/authRoutes.js";
 
@@ -30,6 +31,7 @@ connectDB();
 // 🔥 Routes
 app.use("/api/auth", authRoutes);
 
+app.use("/api/cart", cartRoutes);
 // 🔥 Test route
 app.get("/", (req, res) => {
   res.send("Backend working 🚀");
