@@ -1,30 +1,135 @@
 import express from "express";
 import Razorpay from "razorpay";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../model/User.js";
 
 const router = express.Router();
 
+
+// =====================
 // ✅ SIGNUP ROUTE
-router.post("/signup", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password required" });
-  }
-  return res.status(200).json({ message: "Signup successful" });
+// =====================
+router.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+     console.log(req.body);
+
+    // 🔍 VALIDATION
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "All fields (name, email, password) are required",
+      });
+    }
+
+    // 🔍 CHECK EXISTING USER
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    // 🔐 HASH PASSWORD
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 👤 CREATE USER
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    await user.save();
+
+// 🔑 GENERATE TOKEN
+const token = jwt.sign(
+  { id: user._id, email: user.email },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
+await user.save();
+
+
+
+res.status(201).json({
+  message: "Signup successful 🔥",
+  token,
+  email: user.email,
+  name: user.name,
 });
 
-// ✅ LOGIN ROUTE
-router.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password required" });
-  }
-  return res.status(200).json({
-    token: "dummy-token-123",
-    email: email,
+} catch (err) {
+  console.log("❌ Signup Error:", err);
+  res.status(500).json({
+    message: "Server error",
   });
+}
 });
 
+
+// =====================
+// ✅ LOGIN ROUTE
+// =====================
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // 🔍 VALIDATION
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password required",
+      });
+    }
+
+    // 🔍 FIND USER
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
+
+    // 🔐 CHECK PASSWORD
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Wrong password",
+      });
+    }
+
+    // 🔑 GENERATE TOKEN
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Login successful ✅",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+
+  } catch (err) {
+    console.log("❌ Login Error:", err);
+    res.status(500).json({
+      message: "Login failed",
+    });
+  }
+});
+
+
+// =====================
 // 💳 CREATE ORDER ROUTE
+// =====================
 router.post("/create-order", async (req, res) => {
   try {
     const razorpay = new Razorpay({
@@ -34,41 +139,39 @@ router.post("/create-order", async (req, res) => {
 
     const { amount, items = [] } = req.body;
 
-    // 🔍 DEBUG - terminal mein dekho kya aa raha hai
-    console.log("📦 Received amount from frontend:", amount);
-    console.log("📦 Items received:", JSON.stringify(items, null, 2));
+    // 🔍 VALIDATION
+    if (!amount) {
+      return res.status(400).json({
+        message: "Amount is required",
+      });
+    }
 
-    // ✅ Amount already rupees mein hai frontend se
-    // Backend ×100 karta hai → paise mein convert
+    console.log("📦 Amount received:", amount);
+    console.log("📦 Items:", items);
+
+    // 💰 CONVERT ₹ → PAISE
     const amountInPaise = Math.round(Number(amount) * 100);
-    console.log("💰 Amount in paise being sent to Razorpay:", amountInPaise);
 
     const options = {
       amount: amountInPaise,
       currency: "INR",
       receipt: "order_" + Date.now(),
       notes: {
-        item_count: `${items.length} item(s)`,
-        order_summary: items
-          .map(i => `${i.title} ×${i.quantity}`)
-          .join(", "),
-        total: `₹${amount}`,
+        item_count: `${items.length}`,
       },
     };
 
     const order = await razorpay.orders.create(options);
 
-    // 🔍 DEBUG - Razorpay se kya wapas aaya
-    console.log("✅ Razorpay order created:", {
-      id: order.id,
-      amount: order.amount,       // paise mein hoga
-      amount_rupees: order.amount / 100,  // rupees mein
-    });
+    console.log("✅ Order Created:", order.id);
 
-    res.json(order);
+    res.status(200).json(order);
+
   } catch (error) {
-    console.log("❌ ERROR creating order:", error);
-    res.status(500).json({ message: "Order creation failed" });
+    console.log("❌ Razorpay Error:", error);
+    res.status(500).json({
+      message: "Order creation failed",
+    });
   }
 });
 
