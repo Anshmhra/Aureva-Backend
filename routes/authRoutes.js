@@ -13,7 +13,8 @@ const router = express.Router();
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
-     console.log(req.body);
+
+    console.log("Signup Data:", req.body);
 
     // 🔍 VALIDATION
     if (!name || !email || !password) {
@@ -24,6 +25,7 @@ router.post("/signup", async (req, res) => {
 
     // 🔍 CHECK EXISTING USER
     const existing = await User.findOne({ email });
+
     if (existing) {
       return res.status(400).json({
         message: "User already exists",
@@ -40,32 +42,41 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
     });
 
+    // 💾 SAVE USER
     await user.save();
 
-// 🔑 GENERATE TOKEN
-const token = jwt.sign(
-  { id: user._id, email: user.email },
-  process.env.JWT_SECRET,
-  { expiresIn: "7d" }
-);
+    console.log("✅ USER SAVED:", user);
 
-await user.save();
+    // 🔑 GENERATE TOKEN
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
 
+    // ✅ RESPONSE
+    res.status(201).json({
+      message: "Signup successful 🔥",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
 
+  } catch (err) {
+    console.log("❌ Signup Error:", err);
 
-res.status(201).json({
-  message: "Signup successful 🔥",
-  token,
-  email: user.email,
-  name: user.name,
-});
-
-} catch (err) {
-  console.log("❌ Signup Error:", err);
-  res.status(500).json({
-    message: "Server error",
-  });
-}
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
 });
 
 
@@ -103,11 +114,17 @@ router.post("/login", async (req, res) => {
 
     // 🔑 GENERATE TOKEN
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      {
+        id: user._id,
+        email: user.email,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      {
+        expiresIn: "7d",
+      }
     );
 
+    // ✅ RESPONSE
     res.status(200).json({
       message: "Login successful ✅",
       token,
@@ -120,6 +137,7 @@ router.post("/login", async (req, res) => {
 
   } catch (err) {
     console.log("❌ Login Error:", err);
+
     res.status(500).json({
       message: "Login failed",
     });
@@ -139,6 +157,11 @@ router.post("/create-order", async (req, res) => {
 
     const { amount, items = [] } = req.body;
 
+    // ✅ DEBUG LOGS
+    console.log("REQ BODY:", req.body);
+    console.log("AMOUNT:", amount);
+    console.log("TYPE:", typeof amount);
+
     // 🔍 VALIDATION
     if (!amount) {
       return res.status(400).json({
@@ -150,7 +173,9 @@ router.post("/create-order", async (req, res) => {
     console.log("📦 Items:", items);
 
     // 💰 CONVERT ₹ → PAISE
-    const amountInPaise = Math.round(Number(amount) * 100);
+    const amountInPaise = parseInt(amount * 100);
+
+    console.log("PAISE:", amountInPaise);
 
     const options = {
       amount: amountInPaise,
@@ -161,6 +186,7 @@ router.post("/create-order", async (req, res) => {
       },
     };
 
+    // ✅ CREATE ORDER
     const order = await razorpay.orders.create(options);
 
     console.log("✅ Order Created:", order.id);
@@ -169,6 +195,7 @@ router.post("/create-order", async (req, res) => {
 
   } catch (error) {
     console.log("❌ Razorpay Error:", error);
+
     res.status(500).json({
       message: "Order creation failed",
     });
