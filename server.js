@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cartRoutes from "./routes/cart.js";
 import wishlistRoutes from "./routes/wishlist.js";
-
+import orderRoutes from "./routes/order.js";
 import authRoutes from "./routes/authRoutes.js";
 
 // 🔥 Load env variables (TOP pe hi best hota hai)
@@ -34,6 +34,7 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/order", orderRoutes);
 // 🔥 Test route
 app.get("/", (req, res) => {
   res.send("Backend working 🚀");
