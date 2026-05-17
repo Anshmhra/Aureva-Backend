@@ -1,6 +1,6 @@
 import express from "express";
-import Wishlist from "../models/Wishlist.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
+import Wishlist from "../models/wishlist.js";
+import { authMiddleware } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
