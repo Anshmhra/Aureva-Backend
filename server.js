@@ -3,7 +3,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cartRoutes from "./routes/cart.js";
-import wishlistRoutes from "./routes/wishlist.js";
+import wishlistRoutes from "./model/wishlist.js";
 
 import authRoutes from "./routes/authRoutes.js";
 
