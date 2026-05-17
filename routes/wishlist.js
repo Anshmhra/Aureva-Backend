@@ -1,5 +1,5 @@
 import express from "express";
-import Wishlist from "../models/wishlist.js";
+import Wishlist from "../model/wishlist.js";
 import { authMiddleware } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
