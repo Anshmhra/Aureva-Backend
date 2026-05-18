@@ -1,41 +1,165 @@
-import mongoose from "mongoose";
+import express from "express";
+import Order from "../model/order.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
-const orderSchema = new mongoose.Schema({
+const router = express.Router();
 
-  userId: String,
 
-  orders: [
+// ==========================
+// ✅ GET ORDERS
+// ==========================
+router.get("/", authMiddleware, async (req, res) => {
 
-    {
-      id: String,
+  try {
 
-      status: {
-        type: String,
-        default: "confirmed",
-      },
+    let userOrders = await Order.findOne({
+      userId: req.userId,
+    });
 
-      date: String,
+    // Agar first time user hai
+    if (!userOrders) {
 
-      total: Number,
+      userOrders = new Order({
+        userId: req.userId,
+        orders: [],
+      });
 
-      address: String,
+      await userOrders.save();
 
-      items: [
+    }
 
-        {
-          id: String,
-          title: String,
-          price: Number,
-          quantity: Number,
-          image: String,
-        },
+    res.json({
+      orders: userOrders.orders,
+    });
 
-      ],
+  } catch (err) {
 
-    },
+    console.log(err);
 
-  ],
+    res.status(500).json({
+      message: "Failed to fetch orders",
+    });
+
+  }
 
 });
 
-export default mongoose.model("Order", orderSchema);
+
+// ==========================
+// ✅ ADD ORDER
+// ==========================
+router.post("/add", authMiddleware, async (req, res) => {
+
+  try {
+
+    const newOrder = req.body;
+
+    let userOrders = await Order.findOne({
+      userId: req.userId,
+    });
+
+    // Agar user ka order doc nahi hai
+    if (!userOrders) {
+
+      userOrders = new Order({
+        userId: req.userId,
+        orders: [],
+      });
+
+    }
+
+    // Duplicate check
+    const alreadyExists = userOrders.orders.find(
+      (order) => order.id === newOrder.id
+    );
+
+    if (alreadyExists) {
+
+      return res.json({
+        message: "Order already exists",
+        orders: userOrders.orders,
+      });
+
+    }
+
+    // New order add
+    userOrders.orders.unshift(newOrder);
+
+    await userOrders.save();
+
+    res.json({
+      message: "Order placed",
+      orders: userOrders.orders,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      message: "Failed to add order",
+    });
+
+  }
+
+});
+
+
+// ==========================
+// ✅ UPDATE ORDER STATUS
+// ==========================
+router.put("/update/:orderId", authMiddleware, async (req, res) => {
+
+  try {
+
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const userOrders = await Order.findOne({
+      userId: req.userId,
+    });
+
+    if (!userOrders) {
+
+      return res.status(404).json({
+        message: "Orders not found",
+      });
+
+    }
+
+    // Find order
+    const order = userOrders.orders.find(
+      (o) => o.id === orderId
+    );
+
+    if (!order) {
+
+      return res.status(404).json({
+        message: "Order not found",
+      });
+
+    }
+
+    // Update status
+    order.status = status;
+
+    await userOrders.save();
+
+    res.json({
+      message: "Order status updated",
+      orders: userOrders.orders,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      message: "Failed to update status",
+    });
+
+  }
+
+});
+
+export default router;
