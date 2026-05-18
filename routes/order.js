@@ -85,4 +85,61 @@ router.post("/add", authMiddleware, async (req, res) => {
 
 });
 
+
+// ==========================
+// ✅ UPDATE ORDER STATUS
+// ==========================
+router.put("/update/:orderId", authMiddleware, async (req, res) => {
+
+  try {
+
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const orderData = await Order.findOne({
+      userId: req.userId,
+    });
+
+    if (!orderData) {
+
+      return res.status(404).json({
+        message: "Orders not found",
+      });
+
+    }
+
+    const order = orderData.orders.find(
+      (item) => item.id === orderId
+    );
+
+    if (!order) {
+
+      return res.status(404).json({
+        message: "Order not found",
+      });
+
+    }
+
+    // ✅ STATUS UPDATE
+    order.status = status;
+
+    await orderData.save();
+
+    res.json({
+      message: "Order updated",
+      orders: orderData.orders,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      message: "Update failed",
+    });
+
+  }
+
+});
+
 export default router;
