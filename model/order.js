@@ -57,6 +57,15 @@ router.post("/add", authMiddleware, async (req, res) => {
 
     const newOrder = req.body;
 
+    // ✅ Validate order
+    if (!newOrder.id) {
+
+      return res.status(400).json({
+        message: "Order ID missing",
+      });
+
+    }
+
     // ✅ Find user orders
     let userOrders = await Order.findOne({
       userId: req.userId,
@@ -87,7 +96,7 @@ router.post("/add", authMiddleware, async (req, res) => {
     }
 
     // ✅ Default status
-    newOrder.status = newOrder.status || "pending";
+    newOrder.status = newOrder.status || "confirmed";
 
     // ✅ Add new order
     userOrders.orders.unshift(newOrder);
@@ -127,6 +136,15 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
     console.log("ORDER ID:", orderId);
     console.log("NEW STATUS:", status);
 
+    // ✅ Validate
+    if (!orderId) {
+
+      return res.status(400).json({
+        message: "Order ID missing",
+      });
+
+    }
+
     // ✅ Find user orders
     const userOrders = await Order.findOne({
       userId: req.userId,
@@ -156,7 +174,7 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
     }
 
     // ✅ Update status
-    order.status = status;
+    order.status = status || "confirmed";
 
     // ✅ Save updated orders
     await userOrders.save();
