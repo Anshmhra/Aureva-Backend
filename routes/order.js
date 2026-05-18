@@ -68,6 +68,9 @@ router.post("/add", authMiddleware, async (req, res) => {
 
     }
 
+    // ✅ Default confirmed status
+    newOrder.status = newOrder.status || "confirmed";
+
     // Add order
     userOrders.orders.unshift(newOrder);
 
