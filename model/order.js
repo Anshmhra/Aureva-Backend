@@ -16,7 +16,7 @@ router.get("/", authMiddleware, async (req, res) => {
       userId: req.userId,
     });
 
-    // Agar first time user hai
+    // ✅ First time user
     if (!userOrders) {
 
       userOrders = new Order({
@@ -34,7 +34,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
   } catch (err) {
 
-    console.log(err);
+    console.log("GET ORDERS ERROR:", err);
 
     res.status(500).json({
       message: "Failed to fetch orders",
@@ -58,7 +58,7 @@ router.post("/add", authMiddleware, async (req, res) => {
       userId: req.userId,
     });
 
-    // Agar user ka order doc nahi hai
+    // ✅ Create doc if not exists
     if (!userOrders) {
 
       userOrders = new Order({
@@ -68,9 +68,9 @@ router.post("/add", authMiddleware, async (req, res) => {
 
     }
 
-    // Duplicate check
+    // ✅ Prevent duplicate order
     const alreadyExists = userOrders.orders.find(
-      (order) => order.id === newOrder.id
+      (item) => String(item.id) === String(newOrder.id)
     );
 
     if (alreadyExists) {
@@ -82,7 +82,10 @@ router.post("/add", authMiddleware, async (req, res) => {
 
     }
 
-    // New order add
+    // ✅ Default pending status
+    newOrder.status = "pending";
+
+    // ✅ Add order
     userOrders.orders.unshift(newOrder);
 
     await userOrders.save();
@@ -94,10 +97,11 @@ router.post("/add", authMiddleware, async (req, res) => {
 
   } catch (err) {
 
-    console.log(err);
+    console.log("ADD ORDER ERROR:", err);
 
     res.status(500).json({
       message: "Failed to add order",
+      error: err.message,
     });
 
   }
@@ -115,10 +119,14 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
+    console.log("ORDER ID:", orderId);
+    console.log("STATUS:", status);
+
     const userOrders = await Order.findOne({
       userId: req.userId,
     });
 
+    // ✅ User orders not found
     if (!userOrders) {
 
       return res.status(404).json({
@@ -127,11 +135,12 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
 
     }
 
-    // Find order
+    // ✅ Find exact order
     const order = userOrders.orders.find(
-      (o) => o.id === orderId
+      (item) => String(item.id) === String(orderId)
     );
 
+    // ✅ Order not found
     if (!order) {
 
       return res.status(404).json({
@@ -140,22 +149,23 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
 
     }
 
-    // Update status
+    // ✅ Update status
     order.status = status;
 
     await userOrders.save();
 
     res.json({
-      message: "Order status updated",
+      message: "Order status updated successfully",
       orders: userOrders.orders,
     });
 
   } catch (err) {
 
-    console.log(err);
+    console.log("UPDATE STATUS ERROR:", err);
 
     res.status(500).json({
-      message: "Failed to update status",
+      message: "Failed to update order status",
+      error: err.message,
     });
 
   }
