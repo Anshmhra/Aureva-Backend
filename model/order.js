@@ -12,6 +12,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
   try {
 
+    // ✅ Find user orders
     let userOrders = await Order.findOne({
       userId: req.userId,
     });
@@ -28,7 +29,8 @@ router.get("/", authMiddleware, async (req, res) => {
 
     }
 
-    res.json({
+    // ✅ Send orders
+    res.status(200).json({
       orders: userOrders.orders,
     });
 
@@ -38,6 +40,7 @@ router.get("/", authMiddleware, async (req, res) => {
 
     res.status(500).json({
       message: "Failed to fetch orders",
+      error: err.message,
     });
 
   }
@@ -54,6 +57,7 @@ router.post("/add", authMiddleware, async (req, res) => {
 
     const newOrder = req.body;
 
+    // ✅ Find user orders
     let userOrders = await Order.findOne({
       userId: req.userId,
     });
@@ -75,23 +79,24 @@ router.post("/add", authMiddleware, async (req, res) => {
 
     if (alreadyExists) {
 
-      return res.json({
+      return res.status(200).json({
         message: "Order already exists",
         orders: userOrders.orders,
       });
 
     }
 
-    // ✅ Default pending status
-    newOrder.status = "pending";
+    // ✅ Default status
+    newOrder.status = newOrder.status || "pending";
 
-    // ✅ Add order
+    // ✅ Add new order
     userOrders.orders.unshift(newOrder);
 
+    // ✅ Save
     await userOrders.save();
 
-    res.json({
-      message: "Order placed",
+    res.status(200).json({
+      message: "Order placed successfully",
       orders: userOrders.orders,
     });
 
@@ -120,13 +125,14 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
     const { status } = req.body;
 
     console.log("ORDER ID:", orderId);
-    console.log("STATUS:", status);
+    console.log("NEW STATUS:", status);
 
+    // ✅ Find user orders
     const userOrders = await Order.findOne({
       userId: req.userId,
     });
 
-    // ✅ User orders not found
+    // ✅ Orders not found
     if (!userOrders) {
 
       return res.status(404).json({
@@ -152,9 +158,10 @@ router.put("/update/:orderId", authMiddleware, async (req, res) => {
     // ✅ Update status
     order.status = status;
 
+    // ✅ Save updated orders
     await userOrders.save();
 
-    res.json({
+    res.status(200).json({
       message: "Order status updated successfully",
       orders: userOrders.orders,
     });
